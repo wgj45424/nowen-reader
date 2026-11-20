@@ -125,7 +125,17 @@ func TestShelfListAutomaticallyMergesParentChildDuplicate(t *testing.T) {
 	ownershipInitialCheckDone = false
 	ownershipReconcileMu.Unlock()
 
+	t.Setenv("AUTO_SCAN_LIBRARIES", "false")
 	w := performAuthedRequest(r, http.MethodGet, "/api/libraries/accessible", nil, cookie)
+	if w.Code != http.StatusOK {
+		t.Fatalf("list accessible libraries with automatic scan disabled: %d %s", w.Code, w.Body.String())
+	}
+	var before int
+	if err := store.DB().QueryRow(`SELECT COUNT(*) FROM "Comic"`).Scan(&before); err != nil || before != 2 {
+		t.Fatalf("passive shelf read should not reconcile the library: count=%d err=%v", before, err)
+	}
+	t.Setenv("AUTO_SCAN_LIBRARIES", "true")
+	w = performAuthedRequest(r, http.MethodGet, "/api/libraries/accessible", nil, cookie)
 	if w.Code != http.StatusOK {
 		t.Fatalf("list accessible libraries: %d %s", w.Code, w.Body.String())
 	}
