@@ -10,7 +10,10 @@ import {
   LogOut,
   RefreshCw,
   BookMarked,
+  Globe2,
+  CloudDownload,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme-context";
@@ -18,6 +21,9 @@ import { useAuth } from "@/lib/auth-context";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import UserMenuButton from "@/components/UserMenuButton";
 import SearchIconButton from "@/components/SearchIconButton";
+import { useZLibraryStatus } from "@/hooks/useZLibraryStatus";
+import { useZLibraryTaskBadge, setTaskCenterOpen } from "@/hooks/useZLibraryTasks";
+import TaskCenterBadge from "@/components/zlibrary/TaskCenterBadge";
 
 interface DashboardTopBarProps {
   onUpload?: () => void;
@@ -42,6 +48,8 @@ export default function DashboardTopBar({
   const isAdmin = user?.role === "admin";
   const router = useRouter();
   const { siteName } = useSiteSettings();
+  const { canUse: zCanUse } = useZLibraryStatus();
+  const zTaskBadge = useZLibraryTaskBadge();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
@@ -85,6 +93,18 @@ export default function DashboardTopBar({
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <SearchIconButton query={searchQuery} onChange={setSearchQuery}
           onSubmit={() => router.push(`/books?search=${encodeURIComponent(searchQuery.trim())}`)} />
+        {zCanUse && (
+          <div className="flex items-center gap-1 lg:hidden">
+            <Link href="/zlibrary" aria-label={t.zlibrary.navLabel} title={t.zlibrary.navLabel} className="shell-icon-button">
+              <Globe2 className="h-4 w-4" />
+            </Link>
+            <button type="button" onClick={() => setTaskCenterOpen(true)} aria-label={t.zlibrary.tasksNavLabel}
+              title={t.zlibrary.tasksNavLabel} className="shell-icon-button relative">
+              <CloudDownload className="h-4 w-4" />
+              <TaskCenterBadge count={zTaskBadge} />
+            </button>
+          </div>
+        )}
         {/* 扫描 */}
         {isAdmin && onScanLibrary && (
           <button

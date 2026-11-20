@@ -14,9 +14,15 @@ import {
   Globe,
   Rss,
   Wrench,
+  Globe2,
+  CloudDownload,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useTranslation } from "@/lib/i18n";
+import { useZLibraryStatus } from "@/hooks/useZLibraryStatus";
+import { useZLibraryTaskBadge, setTaskCenterOpen } from "@/hooks/useZLibraryTasks";
+import TaskCenterBadge from "@/components/zlibrary/TaskCenterBadge";
 
 import { apiPath } from "@/lib/base-path";
 import { isManagementPath } from "@/lib/management-navigation";
@@ -32,6 +38,9 @@ export default function DesktopSidebar() {
   const [tooltip, setTooltip] = useState<{ label: string; top: number } | null>(null);
   const dockRef = useRef<HTMLElement>(null);
   const isActive = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+  const t = useTranslation();
+  const { canUse: zCanUse } = useZLibraryStatus();
+  const zTaskBadge = useZLibraryTaskBadge();
 
   useEffect(() => {
     setTooltip(null);
@@ -53,12 +62,13 @@ export default function DesktopSidebar() {
     { href: "/favorites", icon: Heart, label: "收藏" },
     { href: "/collections", icon: Layers, label: "合集", adminOnly: true },
     { href: "/recommendations", icon: Globe, label: "推荐" },
+    { href: "/zlibrary", icon: Globe2, label: t.zlibrary?.navLabel || "Z-Library", zlibOnly: true },
     { href: "/history", icon: Clock, label: "阅读历史" },
     { href: "/stats", icon: BarChart3, label: "阅读统计" },
   ];
 
   const visiblePrimaryItems = primaryItems.filter(
-    (item) => !item.adminOnly || isAdmin
+    (item) => (!item.adminOnly || isAdmin) && (!item.zlibOnly || zCanUse)
   );
   const renderItem = (item: (typeof primaryItems)[number]) => {
     const Icon = item.icon;
@@ -93,6 +103,19 @@ export default function DesktopSidebar() {
         {visiblePrimaryItems.map(renderItem)}
       </nav>
       <div className="dock-footer">
+        {zCanUse && (
+          <button
+            type="button"
+            className="dock-control relative"
+            aria-label={t.zlibrary?.tasksNavLabel || "下载任务"}
+            {...tooltipEvents(t.zlibrary?.tasksNavLabel || "下载任务")}
+            onClick={() => setTaskCenterOpen(true)}
+          >
+            <CloudDownload aria-hidden="true" />
+            <TaskCenterBadge count={zTaskBadge} />
+            <span className="dock-label" aria-hidden="true">{t.zlibrary?.tasksNavLabel || "下载任务"}</span>
+          </button>
+        )}
         <div className="dock-divider" />
         {isAdmin && (
           <Link href="/tag-manager" className="dock-control"
