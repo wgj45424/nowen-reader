@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nowen-reader/nowen-reader/internal/config"
 	"github.com/nowen-reader/nowen-reader/internal/service"
 )
 
@@ -22,7 +23,9 @@ var (
 // and retried by a later request.
 func reconcileOwnershipBeforeList() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		reconcileOwnershipIfDue("list", 15*time.Second, true)
+		if config.AutomaticLibraryScanEnabled() {
+			reconcileOwnershipIfDue("list", 15*time.Second, true)
+		}
 		c.Next()
 	}
 }
@@ -94,7 +97,9 @@ func reconcileOwnershipIfDue(reason string, minInterval time.Duration, initialOn
 // InitializeShelfMaintenance performs legacy repairs before accepting requests.
 // Scans retain their reconciliation hooks; list middleware is a retry fallback.
 func InitializeShelfMaintenance() {
-	reconcileOwnershipIfDue("startup", 0, true)
+	if config.AutomaticLibraryScanEnabled() {
+		reconcileOwnershipIfDue("startup", 0, true)
+	}
 	if err := service.EnsureComicSeriesFresh(); err != nil {
 		log.Printf("[series] startup refresh failed: %v", err)
 	}
