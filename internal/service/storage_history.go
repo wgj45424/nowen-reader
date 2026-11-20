@@ -133,13 +133,6 @@ func GetStorageHistory(days int) []StorageSample {
 // sampler 由调用方提供，避免 service 包反向依赖 handler
 func StartStorageSampler(sampler func() (cacheBytes int64, dbBytes int64, diskFree uint64)) {
 	go func() {
-		// 启动 30 秒后采一次
-		time.Sleep(30 * time.Second)
-		if sampler != nil {
-			c, d, f := sampler()
-			RecordStorageSample(c, d, f)
-		}
-
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
 		for range ticker.C {

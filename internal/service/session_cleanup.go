@@ -8,8 +8,7 @@ import (
 )
 
 // StartSessionCleanup 定期清理过期的用户 Session（每 6 小时执行一次）。
-// 同时启动低频孤儿内容缓存 GC。缓存 GC 延迟执行，给启动时 initial
-// quick-sync 留出时间先把已经移出书库的数据库记录清理掉。
+// 孤儿内容缓存 GC 在首个周期执行，不在重启后立即遍历缓存。
 func StartSessionCleanup() {
 	go func() {
 		cleanExpiredSessions()
@@ -23,9 +22,6 @@ func StartSessionCleanup() {
 	}()
 
 	go func() {
-		time.Sleep(30 * time.Second)
-		cleanupOrphanContentCaches()
-
 		ticker := time.NewTicker(30 * time.Minute)
 		defer ticker.Stop()
 		for range ticker.C {
@@ -34,7 +30,7 @@ func StartSessionCleanup() {
 	}()
 
 	log.Println("[session-cleanup] Session cleanup scheduler started (interval: 6h)")
-	log.Println("[cache-gc] Orphan content cache cleanup scheduled (startup delay: 30s, interval: 30m)")
+	log.Println("[cache-gc] Orphan content cache cleanup scheduled (interval: 30m)")
 }
 
 func cleanExpiredSessions() {
