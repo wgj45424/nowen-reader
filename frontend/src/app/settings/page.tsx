@@ -8,6 +8,7 @@ import {
   Info,
   Brain,
   Globe,
+  Globe2,
   BookOpen,
   Sparkles,
   Github,
@@ -93,12 +94,17 @@ const NASDiagnosticsPanel = dynamic(
 );
 
 const RemoteOPDSPanel = dynamic(() => import("@/app/remote-opds/page"), { loading: LoadingSkeleton });
+const ZLibrarySettingsPanel = dynamic(
+  () => import("@/components/ZLibrarySettingsPanel").then((mod) => mod.default),
+  { loading: LoadingSkeleton }
+);
 
 /* ── 类型 ── */
 type SettingsTab =
   | "account"
   | "site"
   | "ai"
+  | "zlibrary"
   | "scan-rules"
   | "users"
   | "libraries"
@@ -145,7 +151,7 @@ export default function SettingsPage() {
     "reader",
     "opds",
     ...(isAdmin
-      ? ["site" as const, "ai" as const, "scan-rules" as const, "users" as const, "libraries" as const, "user-groups" as const, "diagnostics" as const]
+      ? ["site" as const, "ai" as const, "zlibrary" as const, "scan-rules" as const, "users" as const, "libraries" as const, "user-groups" as const, "diagnostics" as const]
       : []),
     "about",
   ];
@@ -208,6 +214,7 @@ export default function SettingsPage() {
       tabs: [
         ...(isAdmin
           ? [
+              { id: "zlibrary" as const, label: t.zlibrary?.settings.tabLabel || "Z-Library", icon: <Globe2 className="h-[18px] w-[18px]" />, desc: "连接、域名、下载与权限", keywords: ["Z-Library", "zlibrary", "z-lib", "连接", "域名", "配额", "下载", "入库", "remix"] },
               { id: "ai" as const, label: "AI 服务", icon: <Brain className="h-[18px] w-[18px]" />, desc: "模型、连接与用量", keywords: ["AI", "模型", "服务", "连接", "云端", "本地", "llama", "用量"] },
               { id: "scan-rules" as const, label: "扫描自动化", icon: <Wand2 className="h-[18px] w-[18px]" />, desc: "识别、归类与目录整理", keywords: ["扫描", "规则", "归类", "目录", "硬链接", "过滤", "scan", "rules"] },
             ]
@@ -276,6 +283,7 @@ export default function SettingsPage() {
       {activeTab === "account" && <AccountPanel />}
       {activeTab === "site" && <SiteSettingsPanel />}
       {activeTab === "ai" && <AISettingsPanel />}
+      {isAdmin && activeTab === "zlibrary" && <ZLibrarySettingsPanel />}
       {activeTab === "scan-rules" && <ScanRulesPanel />}
       {activeTab === "users" && <UserManagementPanel />}
       {activeTab === "libraries" && <LibraryManagementPanel />}
