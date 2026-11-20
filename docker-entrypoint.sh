@@ -59,8 +59,8 @@ mkdir -p "${NOVELS_DIR}" 2>/dev/null || true
 # ============================================================
 # 权限修复函数
 # PERMISSION_FIX_MODE:
-#   auto              - 默认：仅在根目录不可写时尝试修复，避免大书库每次启动递归扫盘
-#   relaxed           - auto 失败后回退到 a+rwX（适合无法 chown 的 NAS/SMB）
+#   auto              - 默认：只检查并修复挂载根目录，不递归扫盘
+#   relaxed           - auto 失败后仅对根目录回退到 a+rwx（适合无法 chown 的 NAS/SMB）
 #   recursive         - 强制递归修复现有文件。适合“旧文件正常、后来新增文件 permission denied”
 #   recursive-relaxed - recursive + a+rwX 回退。适合 NAS/SMB/NFS 无法 chown 的场景
 #   off               - 不修复权限，只做根目录可写性检测
@@ -158,30 +158,11 @@ fix_permissions() {
         return
     fi
 
-    # 根目录仍不可写时，再递归修复已有文件。
-    if chown -R "${PUID}:${PGID}" "$dir" 2>/dev/null; then
-        chmod -R u+rwX,g+rwX "$dir" 2>/dev/null || true
-        if user_can_write "$dir"; then
-            echo "[init] ✅ chown -R ${PUID}:${PGID} $dir"
-            return
-        fi
-    else
-        echo "[init] ⚠️  chown failed for $dir (common on NAS/NFS/CIFS/SMB mounts)"
-    fi
-
-    # If ownership cannot be changed but group mapping is correct, group write is enough.
-    if chmod -R u+rwX,g+rwX "$dir" 2>/dev/null; then
-        if user_can_write "$dir"; then
-            echo "[init] ✅ chmod group-writable $dir"
-            return
-        fi
-    fi
-
     # Some NAS/SMB mounts map container users to a guest/nobody identity. Make the
     # broad fallback explicit so operators can opt in instead of silently using 777.
     if is_relaxed_mode; then
-        echo "[init] ⚠️  trying relaxed chmod a+rwX for $dir"
-        if chmod -R a+rwX "$dir" 2>/dev/null && user_can_write "$dir"; then
+        echo "[init] ⚠️  trying relaxed chmod a+rwx on the root directory only: $dir"
+        if chmod a+rwx "$dir" 2>/dev/null && user_can_write "$dir"; then
             echo "[init] ✅ relaxed permissions allow writes: $dir"
             return
         fi
@@ -190,6 +171,7 @@ fix_permissions() {
     echo "[init] ❌ appuser still cannot write: $dir"
     echo "[init]    Set PUID/PGID to the host file owner (check with ls -ln),"
     echo "[init]    or set PERMISSION_FIX_MODE=relaxed for NAS/SMB mounts that cannot chown."
+    echo "[init]    For existing file permissions, use PERMISSION_FIX_MODE=recursive for a one-time repair."
 }
 
 # 修复核心目录权限
