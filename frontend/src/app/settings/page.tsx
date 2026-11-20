@@ -28,6 +28,7 @@ import {
   Eye,
   ChevronRight,
   ChevronDown,
+  Rss,
   Mail,
   Settings as SettingsIcon,
 } from "lucide-react";
@@ -91,6 +92,8 @@ const NASDiagnosticsPanel = dynamic(
   { loading: LoadingSkeleton }
 );
 
+const RemoteOPDSPanel = dynamic(() => import("@/app/remote-opds/page"), { loading: LoadingSkeleton });
+
 /* ── 类型 ── */
 type SettingsTab =
   | "account"
@@ -99,6 +102,7 @@ type SettingsTab =
   | "scan-rules"
   | "users"
   | "libraries"
+  | "opds"
   | "user-groups"
   | "diagnostics"
   | "reader"
@@ -132,12 +136,14 @@ export default function SettingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslation();
+  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
   const validTabs: SettingsTab[] = [
     "account",
     "reader",
+    "opds",
     ...(isAdmin
       ? ["site" as const, "ai" as const, "scan-rules" as const, "users" as const, "libraries" as const, "user-groups" as const, "diagnostics" as const]
       : []),
@@ -194,6 +200,7 @@ export default function SettingsPage() {
               { id: "user-groups" as const, label: "权限组", icon: <Users className="h-[18px] w-[18px]" />, desc: "批量管理用户书库权限", keywords: ["权限组", "用户组", "权限", "group"] },
             ]
           : []),
+        { id: "opds", label: locale === "zh-CN" ? "网络 OPDS" : "Remote OPDS", icon: <Rss className="h-[18px] w-[18px]" />, desc: locale === "zh-CN" ? "连接并浏览外部目录" : "Connect to and browse external catalogs", keywords: ["源", "目录", "catalog", "source"] },
       ],
     },
     {
@@ -272,6 +279,7 @@ export default function SettingsPage() {
       {activeTab === "scan-rules" && <ScanRulesPanel />}
       {activeTab === "users" && <UserManagementPanel />}
       {activeTab === "libraries" && <LibraryManagementPanel />}
+      {activeTab === "opds" && <RemoteOPDSPanel embedded />}
       {activeTab === "user-groups" && <UserGroupManagementPanel />}
       {activeTab === "diagnostics" && <NASDiagnosticsPanel />}
       {activeTab === "reader" && <ReaderPreferencesPanel />}
