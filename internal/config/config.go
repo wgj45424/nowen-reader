@@ -12,6 +12,12 @@ import (
 	"time"
 )
 
+// AutomaticLibraryScanEnabled reports whether the server may scan media without a user action.
+func AutomaticLibraryScanEnabled() bool {
+	enabled, err := strconv.ParseBool(strings.TrimSpace(os.Getenv("AUTO_SCAN_LIBRARIES")))
+	return err == nil && enabled
+}
+
 // SiteConfig represents the site-config.json file structure.
 type SiteConfig struct {
 	SiteName         string           `json:"siteName,omitempty"`
