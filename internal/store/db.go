@@ -72,8 +72,8 @@ func InitDB(dbPath string) error {
 
 	log.Println("[DB] Database schema ready.")
 
-	// 自动完整性检查与索引修复
-	if os.Getenv("SKIP_INTEGRITY_CHECK") == "" {
+	// A full integrity check scans the database; run it only when requested.
+	if os.Getenv("CHECK_INTEGRITY_ON_STARTUP") == "1" && os.Getenv("SKIP_INTEGRITY_CHECK") == "" {
 		if err := autoRepairIndexes(); err != nil {
 			log.Printf("[DB] Warning: auto-repair failed: %v", err)
 		}

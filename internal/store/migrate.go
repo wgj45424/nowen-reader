@@ -503,6 +503,11 @@ var Migrations = []Migration{
 			`DELETE FROM "ReadingSession" WHERE "endedAt" IS NULL AND "duration" = 0;`,
 		}, "\n"),
 	},
+	{
+		Version:     47,
+		Description: "Backfill persistent full-text search index",
+		SQL:         `INSERT INTO "ComicFTS"("ComicFTS") VALUES('rebuild');`,
+	},
 }
 
 // ensureMigrationsTable creates the migrations tracking table.
@@ -635,7 +640,7 @@ func initializeDefaultLibraryPaths() error {
 }
 
 // RebuildFTSIndex 重建 FTS5 全文搜索索引。
-// 在 migration 8 首次应用后调用，或在数据迁移后手动调用。
+// 供手动迁移命令使用；服务端依靠迁移及 Comic 表触发器维护索引。
 func RebuildFTSIndex() error {
 	// 检查 FTS 表是否存在
 	var name string
