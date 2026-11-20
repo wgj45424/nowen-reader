@@ -102,7 +102,7 @@ func registerMetadataRoutes(api *gin.RouterGroup) {
 		comicByIDAI.POST("/ai-translate-page", ai.TranslatePage)
 	}
 
-	api.POST("/remote-opds", middleware.AdminRequired(), readRemoteOPDS)
+	api.POST("/remote-opds", middleware.AuthRequired(), middleware.RateLimitStrict(), readRemoteOPDS)
 	api.POST("/remote-opds/import", middleware.AdminRequired(), importRemoteOPDS)
 
 	// OPDS 1.2 protocol — browser session, Bearer API key, or scoped Basic API key.
