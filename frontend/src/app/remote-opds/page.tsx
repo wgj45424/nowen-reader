@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { apiPath } from "@/lib/base-path";
 import { useLocale } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth-context";
 import { fetchLibraries, type Library } from "@/api/libraries";
 import { notifyLibraryAccessChanged } from "@/hooks/useComicList";
 
@@ -53,9 +54,11 @@ async function postOPDS(path: string, url: string, login: CatalogLogin | null, d
 const inputStyle = "w-full rounded-lg border border-border bg-background px-3 py-2";
 const buttonStyle = "rounded-lg border border-border px-3 py-2 text-sm hover:bg-background disabled:opacity-50";
 
-export default function RemoteOPDSPage() {
+export default function RemoteOPDSPage({ embedded = false }: { embedded?: boolean }) {
   const { locale } = useLocale();
   const zh = locale === "zh-CN";
+  const { user } = useAuth();
+  const canImport = user?.role === "admin";
   const [address, setAddress] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -69,6 +72,7 @@ export default function RemoteOPDSPage() {
   const [importing, setImporting] = useState(false);
   const [saved, setSaved] = useState("");
   const catalog = history[history.length - 1];
+  const hasCatalog = Boolean(catalog);
   const folders = libraries.filter((library) => library.enabled).flatMap((library) =>
     [...new Set([library.rootPath, ...(library.rootPaths || [])])].filter(Boolean).map((rootPath) => ({
       key: JSON.stringify([library.id, rootPath]), libraryId: library.id, rootPath, label: `${library.name} — ${rootPath}`,
@@ -76,8 +80,9 @@ export default function RemoteOPDSPage() {
   const destination = folders.find((item) => item.key === folder);
 
   useEffect(() => {
+    if (!hasCatalog || !canImport) return;
     void fetchLibraries().then(setLibraries, () => setLibrariesFailed(true));
-  }, []);
+  }, [hasCatalog, canImport]);
 
   async function load(url: string, credentials: CatalogLogin | null, start = false) {
     setLoading(true);
@@ -110,7 +115,7 @@ export default function RemoteOPDSPage() {
   }
 
   async function importBook(url: string) {
-    if (!destination || importing) return;
+    if (!canImport || !destination || importing) return;
     setImporting(true);
     setSaved("");
     setError("");
@@ -129,9 +134,11 @@ export default function RemoteOPDSPage() {
     }
   }
 
+  const Container = embedded ? "section" : "main";
+  const Heading = embedded ? "h2" : "h1";
   return (
-    <main className="mx-auto max-w-4xl space-y-5 px-4 pb-24 pt-8 sm:px-8">
-      <h1 className="text-2xl font-semibold">{zh ? "网络 OPDS" : "Remote OPDS"}</h1>
+    <Container className={embedded ? "space-y-5" : "mx-auto max-w-4xl space-y-5 px-4 pb-24 pt-8 sm:px-8"}>
+      <Heading className={embedded ? "hidden text-xl font-semibold sm:block" : "text-2xl font-semibold"}>{zh ? "网络 OPDS" : "Remote OPDS"}</Heading>
       <p className="text-sm text-muted">{zh ? "浏览公网 OPDS 1.x 目录。需要登录时，请使用 HTTPS。" : "Browse public OPDS 1.x catalogs. Use HTTPS if sign-in is required."}</p>
       <form className="space-y-3 rounded-xl border border-border bg-surface p-4" onSubmit={connect} autoComplete="off">
         <label className="block space-y-1">
@@ -156,14 +163,18 @@ export default function RemoteOPDSPage() {
       {error && <p role="alert" className="text-red-500">{error}</p>}
       {catalog && (
         <section className="space-y-3" aria-busy={loading || importing}>
-          <label className="block space-y-1">
-            <span className="text-sm">{zh ? "下载目标书库文件夹" : "Destination library folder"}</span>
-            <select className={inputStyle} value={folder} disabled={importing} onChange={(event) => setFolder(event.target.value)}>
-              <option value="">{zh ? "选择已配置的文件夹" : "Choose a configured folder"}</option>
-              {folders.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
-            </select>
-          </label>
-          {librariesFailed && <p role="alert">{zh ? "无法读取书库列表。" : "Could not load libraries."}</p>}
+          {canImport && (
+            <>
+              <label className="block space-y-1">
+                <span className="text-sm">{zh ? "下载目标书库文件夹" : "Destination library folder"}</span>
+                <select className={inputStyle} value={folder} disabled={importing} onChange={(event) => setFolder(event.target.value)}>
+                  <option value="">{zh ? "选择已配置的文件夹" : "Choose a configured folder"}</option>
+                  {folders.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
+                </select>
+              </label>
+              {librariesFailed && <p role="alert">{zh ? "无法读取书库列表。" : "Could not load libraries."}</p>}
+            </>
+          )}
           <div className="flex items-center gap-3">
             {history.length > 1 && <button className={buttonStyle} disabled={loading || importing} onClick={() => {
               setHistory((previous) => previous.slice(0, -1));
@@ -182,7 +193,7 @@ export default function RemoteOPDSPage() {
                   ) : (
                     <Fragment key={linkIndex}>
                       <a className={buttonStyle} href={link.url} target="_blank" rel="noreferrer">{link.title || (zh ? "在来源站打开 / 下载" : "Open / download from source")}</a>
-                      <button className={buttonStyle} disabled={!destination || loading || importing} onClick={() => void importBook(link.url)}>{zh ? "下载到书库" : "Download to library"}</button>
+                      {canImport && <button className={buttonStyle} disabled={!destination || loading || importing} onClick={() => void importBook(link.url)}>{zh ? "下载到书库" : "Download to library"}</button>}
                     </Fragment>
                   ))}
                 </div>
@@ -194,6 +205,6 @@ export default function RemoteOPDSPage() {
           }}>{zh ? "下一页" : "Next page"}</button>}
         </section>
       )}
-    </main>
+    </Container>
   );
 }
