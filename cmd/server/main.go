@@ -63,13 +63,6 @@ func main() {
 	// Build existing-library projections before accepting the first shelf request.
 	handler.InitializeShelfMaintenance()
 
-	// Rebuild FTS5 full-text search index in background (non-blocking)
-	go func() {
-		if err := store.RebuildFTSIndex(); err != nil {
-			log.Printf("[Main] Warning: FTS index rebuild failed: %v", err)
-		}
-	}()
-
 	// ============================================================
 	// Ensure required directories exist
 	// ============================================================
@@ -91,9 +84,11 @@ func main() {
 	// ============================================================
 
 	// ============================================================
-	// Start background comic sync
+	// Background scans traverse media mounts and are opt-in.
 	// ============================================================
-	service.StartBackgroundSync()
+	if config.AutomaticLibraryScanEnabled() {
+		service.StartBackgroundSync()
+	}
 
 	// ============================================================
 	// Start session cleanup scheduler
