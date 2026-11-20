@@ -25,6 +25,7 @@ import { getBasePath } from "@/lib/base-path";
 // The "use client" directive is harmless in Vite
 import Home from "@/app/page";
 const BooksPage = React.lazy(() => import("@/app/books/page"));
+const RemoteOPDSPage = React.lazy(() => import("@/app/remote-opds/page"));
 const ComicDetail = React.lazy(() => import("@/app/comic/[id]/page"));
 const Reader = React.lazy(() => import("@/app/reader/[id]/page"));
 const NovelReader = React.lazy(() => import("@/app/novel/[id]/page"));
@@ -115,6 +116,7 @@ function AppRoutes() {
       <Route element={<ShellRouteLayout />}>
         <Route index element={<Home />} />
         <Route path="books" element={<BooksPage />} />
+        <Route path="remote-opds" element={<RemoteOPDSPage />} />
         <Route path="favorites" element={<BooksPage favoritesView />} />
         <Route path="recommendations" element={<Recommendations />} />
         <Route path="stats" element={<Stats />} />
