@@ -12,6 +12,7 @@ import {
   Settings,
   BarChart3,
   Globe,
+  Rss,
   Wrench,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -48,6 +49,7 @@ export default function DesktopSidebar() {
   const primaryItems = [
     { href: "/", icon: LayoutDashboard, label: "首页" },
     { href: "/books", icon: BookMarked, label: "书库" },
+    { href: "/remote-opds", icon: Rss, label: "OPDS" },
     { href: "/favorites", icon: Heart, label: "收藏" },
     { href: "/collections", icon: Layers, label: "合集", adminOnly: true },
     { href: "/recommendations", icon: Globe, label: "推荐" },

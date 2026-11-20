@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useLocation } from "react-router-dom";
-import { LayoutDashboard, BookMarked, Settings, Layers, Tag, Heart } from "lucide-react";
+import { LayoutDashboard, BookMarked, Settings, Layers, Heart, Rss } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 
@@ -64,6 +64,12 @@ export default function MobileBottomNav() {
       label: (t as any).collections?.navTitle || "合集",
       active: pathname === "/collections",
     }] : []),
+    {
+      href: "/remote-opds",
+      icon: Rss,
+      label: "OPDS",
+      active: pathname === "/remote-opds",
+    },
     {
       href: "/settings",
       icon: Settings,
