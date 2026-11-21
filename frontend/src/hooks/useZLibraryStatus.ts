@@ -1,6 +1,7 @@
 // s-library: 新增 — Z-Library 连接/配额/域名状态 hook（来源 docs/UI-DESIGN.md §9.1）
 // 模块级单例缓存 + invalidate，参照 useAIStatus / useComics 的缓存先例。
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 import {
   fetchZLibraryStatus,
   ZLibraryApiError,
@@ -78,6 +79,7 @@ export interface UseZLibraryStatusResult extends ZStatusState {
 }
 
 export function useZLibraryStatus(): UseZLibraryStatusResult {
+  const { user } = useAuth();
   const [snap, setSnap] = useState<ZStatusState>(state);
 
   useEffect(() => {
@@ -99,8 +101,7 @@ export function useZLibraryStatus(): UseZLibraryStatusResult {
     forbidden: snap.forbidden,
     loading: snap.loading,
     error: snap.error,
-    // 仅在确认拿到 200 响应后才视为可用，避免入口先闪现再消失
-    canUse: !snap.forbidden && !!snap.status,
+    canUse: !!user && (user.role === "admin" || (!snap.forbidden && snap.status?.canUse === true)),
     refresh: () => {
       state = { status: null, forbidden: false, loading: false, error: null };
       emit();
