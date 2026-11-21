@@ -18,7 +18,6 @@ import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader, PageContent } from "@/components/PageHeader";
 import { useToast } from "@/components/Toast";
-import ScrollReveal from "@/components/ScrollReveal";
 import { bumpTaskBadge, setTaskCenterOpen } from "@/hooks/useZLibraryTasks";
 import { useZLibraryStatus } from "@/hooks/useZLibraryStatus";
 import {
@@ -60,14 +59,18 @@ export default function ZLibraryPage() {
   const toast = useToast();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const { status, loading: statusLoading, refresh: refreshStatus } = useZLibraryStatus();
+  const { status, loading: statusLoading, error: statusError, refresh: refreshStatus } = useZLibraryStatus();
   const quota = quotaViewOf(status);
   const connected = !!status?.connected;
 
   const [filters, setFilters] = useState<ZFilterState>(DEFAULT_FILTERS);
-  const [viewMode, setViewMode] = useState<"grid" | "list">(() =>
-    typeof window !== "undefined" && localStorage.getItem(ZLS_VIEW_MODE) === "list" ? "list" : "grid"
-  );
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    try {
+      return localStorage.getItem(ZLS_VIEW_MODE) === "list" ? "list" : "grid";
+    } catch {
+      return "grid";
+    }
+  });
   const [books, setBooks] = useState<ZBook[]>([]);
   const [total, setTotal] = useState(0);
   // s-library: 上游不回 total 时（实测 z-lib.by）用最后一批是否满页判断有无下一页
@@ -264,6 +267,17 @@ export default function ZLibraryPage() {
       />
 
       <PageContent width="wide" className="space-y-4">
+        {statusLoading && !status && (
+          <p role="status" className="text-sm text-muted">{t.common.loading}</p>
+        )}
+        {statusError && (
+          <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3">
+            <p className="min-w-0 flex-1 text-xs text-foreground">{z.error.upstream}</p>
+            <button type="button" onClick={refreshStatus} className="min-h-8 rounded-lg border border-border px-3 text-xs text-foreground">
+              {z.action.retry}
+            </button>
+          </div>
+        )}
         {/* 未连接横幅：搜索框禁用 + 重连引导 */}
         {!statusLoading && status && !connected && (
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3">
@@ -372,34 +386,32 @@ export default function ZLibraryPage() {
 
             {viewMode === "grid" ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-6">
-                {books.map((book, i) => (
-                  <ScrollReveal key={`${book.zbookId}:${book.hash}`} delay={Math.min(i, 12) * 30}>
-                    <ZBookCard
-                      book={book}
-                      viewMode="grid"
-                      actionState={cardActionState(book)}
-                      actionReason={cardActionReason(book)}
-                      onOpenDetail={setDetailBook}
-                      onQuickImport={quickImport}
-                      onViewTask={() => setTaskCenterOpen(true)}
-                    />
-                  </ScrollReveal>
+                {books.map((book) => (
+                  <ZBookCard
+                    key={`${book.zbookId}:${book.hash}`}
+                    book={book}
+                    viewMode="grid"
+                    actionState={cardActionState(book)}
+                    actionReason={cardActionReason(book)}
+                    onOpenDetail={setDetailBook}
+                    onQuickImport={quickImport}
+                    onViewTask={() => setTaskCenterOpen(true)}
+                  />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-2 sm:gap-3">
-                {books.map((book, i) => (
-                  <ScrollReveal key={`${book.zbookId}:${book.hash}`} delay={Math.min(i, 12) * 30}>
-                    <ZBookCard
-                      book={book}
-                      viewMode="list"
-                      actionState={cardActionState(book)}
-                      actionReason={cardActionReason(book)}
-                      onOpenDetail={setDetailBook}
-                      onQuickImport={quickImport}
-                      onViewTask={() => setTaskCenterOpen(true)}
-                    />
-                  </ScrollReveal>
+                {books.map((book) => (
+                  <ZBookCard
+                    key={`${book.zbookId}:${book.hash}`}
+                    book={book}
+                    viewMode="list"
+                    actionState={cardActionState(book)}
+                    actionReason={cardActionReason(book)}
+                    onOpenDetail={setDetailBook}
+                    onQuickImport={quickImport}
+                    onViewTask={() => setTaskCenterOpen(true)}
+                  />
                 ))}
               </div>
             )}
