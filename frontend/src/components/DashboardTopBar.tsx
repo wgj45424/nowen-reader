@@ -95,9 +95,11 @@ export default function DashboardTopBar({
           onSubmit={() => router.push(`/books?search=${encodeURIComponent(searchQuery.trim())}`)} />
         {zCanUse && (
           <div className="flex items-center gap-1 lg:hidden">
-            <Link href="/zlibrary" aria-label={t.zlibrary.navLabel} title={t.zlibrary.navLabel} className="shell-icon-button">
-              <Globe2 className="h-4 w-4" />
-            </Link>
+            <div className="hidden sm:block">
+              <Link href="/zlibrary" aria-label={t.zlibrary.navLabel} title={t.zlibrary.navLabel} className="shell-icon-button">
+                <Globe2 className="h-4 w-4" />
+              </Link>
+            </div>
             <button type="button" onClick={() => setTaskCenterOpen(true)} aria-label={t.zlibrary.tasksNavLabel}
               title={t.zlibrary.tasksNavLabel} className="shell-icon-button relative">
               <CloudDownload className="h-4 w-4" />

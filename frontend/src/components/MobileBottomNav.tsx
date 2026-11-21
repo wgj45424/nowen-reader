@@ -3,14 +3,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useLocation } from "react-router-dom";
-import { LayoutDashboard, BookMarked, Settings, Layers, Heart } from "lucide-react";
+import { LayoutDashboard, BookMarked, Settings, Layers, Heart, Globe2 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
+import { useZLibraryStatus } from "@/hooks/useZLibraryStatus";
 
 /**
  * 移动端底部导航栏
  * 仅在屏幕宽度 < 640px 时显示
- * 非管理员仅显示书库和设置
  */
 export default function MobileBottomNav() {
   const location = useLocation();
@@ -19,6 +19,7 @@ export default function MobileBottomNav() {
   const t = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const { canUse: canUseZLibrary } = useZLibraryStatus();
   const [isMobile, setIsMobile] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
@@ -63,6 +64,12 @@ export default function MobileBottomNav() {
       icon: Layers,
       label: (t as any).collections?.navTitle || "合集",
       active: pathname === "/collections",
+    }] : []),
+    ...(canUseZLibrary ? [{
+      href: "/zlibrary",
+      icon: Globe2,
+      label: t.zlibrary.navLabel,
+      active: pathname === "/zlibrary",
     }] : []),
     {
       href: "/settings",
